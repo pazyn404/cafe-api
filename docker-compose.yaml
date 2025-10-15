@@ -1,0 +1,63 @@
+services:
+  api:
+    build:
+      dockerfile: Dockerfile
+    container_name: api
+    command: sh dev/startapi.sh
+    restart: unless-stopped
+    volumes:
+      - .:/api
+    env_file:
+      - dev/api.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+
+  webrenderer:
+    build:
+      context: webrenderer
+      dockerfile: Dockerfile
+    container_name: webrenderer
+    environment:
+      - HOST=webrenderer
+
+  celery_app:
+    build:
+      dockerfile: Dockerfile
+    container_name: celery_app
+    command: celery -A cafe.celery_app worker --concurrency=${WORKERS_COUNT} --loglevel=${CELERY_LOG_LEVEL}
+    volumes:
+      - .:/api
+    env_file:
+      - dev/api.env
+    depends_on:
+      - redis
+
+  celery_beat_app:
+    build:
+      dockerfile: Dockerfile
+    container_name: celery_beat_app
+    command: celery -A cafe.celery_app beat --scheduler django --loglevel=${CELERY_BEAT_LOG_LEVEL}
+    volumes:
+      - .:/api
+    env_file:
+      - dev/api.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    env_file:
+      - dev/postgres.env
+    healthcheck:
+      test: /usr/bin/pg_isready -U postgres
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: redis

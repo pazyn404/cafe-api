@@ -1,0 +1,66 @@
+openapi: 3.0.3
+info:
+  title: Cafe API
+  version: 1.0.0
+paths:
+  /api/orders/:
+    post:
+      operationId: api_orders_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Order'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Order'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+components:
+  schemas:
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        point_id:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+      required:
+      - id
+      - items
+      - point_id
+    OrderItem:
+      type: object
+      properties:
+        name:
+          type: string
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+      required:
+      - name
+      - price
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
